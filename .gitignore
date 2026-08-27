@@ -1,0 +1,57 @@
+# —— Python ——
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# —— 环境（根目录与任意子目录，含 claude-code-mini）——
+.env
+.env.*
+!.env.example
+.envrc
+.env*.local
+.venv/
+venv/
+env/
+
+# —— Claude-code / Agent 运行时 ——
+.transcripts/
+.task_outputs/
+.tasks/
+.teams/
+.mailboxes/
+.worktrees/
+.scheduled_tasks.json
+
+# —— 本地运行时（不入库）——
+.output/
+**/.output/
+
+# .memory：忽略全部，仅保留 README.md
+.memory/*
+!.memory/README.md
+
+claude-code-mini/tests/
+
+# —— 其它 ——
+.ipynb_checkpoints/
+.cache/
+*.log
+.idea/
+.vscode/
+analysis/
+analysis_progress.md
+test_providers.py
+.pypirc
+.cursorignore
+.cursorindexingignore

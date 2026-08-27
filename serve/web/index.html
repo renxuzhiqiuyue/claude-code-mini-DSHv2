@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>mini · Claude-code-mini</title>
+  <link rel="stylesheet" href="/static/app.css?v=chat-full" />
+</head>
+<body>
+  <div id="sessionGate" class="gate">
+    <div class="gate-card">
+      <h1>选择会话</h1>
+      <p class="gate-desc">每个会话对应 <code>.memory/session_*/</code> 目录（JSONL 轨迹）。</p>
+      <button type="button" class="btn-primary" id="gateNew">新建会话</button>
+      <div class="gate-list" id="gateList"></div>
+    </div>
+  </div>
+
+  <div id="compressGate" class="gate" hidden>
+    <div class="gate-card">
+      <h1>压缩历史会话？</h1>
+      <p class="gate-desc" id="compressDesc">是否将历史对话压缩为摘要？压缩后仅保留一条用户消息与一条助手摘要，原工具调用与多轮消息将被移除。</p>
+      <div class="gate-actions">
+        <button type="button" class="btn-primary" id="compressYes">是，压缩历史</button>
+        <button type="button" class="btn-secondary" id="compressNo">否，保持原样</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="consolidateGate" class="gate" hidden>
+    <div class="gate-card">
+      <h1>总结会话？</h1>
+      <p class="gate-desc" id="consolidateDesc">是否将该会话的对话要点写入 <code>.memory/MEMORY.md</code>？</p>
+      <div class="gate-actions">
+        <button type="button" class="btn-primary" id="consolidateYes">是，写入 MEMORY.md</button>
+        <button type="button" class="btn-secondary" id="consolidateNo">否，仅打开会话</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell" id="appShell" hidden>
+    <aside class="rail">
+      <div class="rail-brand">
+        <div class="brand-row">
+          <span class="brand-name">mini</span>
+          <span class="badge" id="runBadge">READY</span>
+        </div>
+        <div class="brand-sub">Claude-code-mini</div>
+      </div>
+      <button type="button" class="btn-new" id="btnNewChat">新建会话</button>
+      <div class="rail-section">
+        <div class="rail-label">工作区（OUTPUT_DIR）</div>
+        <div id="tree" class="tree" aria-label="可见目录树"></div>
+      </div>
+      <div class="rail-section grow">
+        <div class="rail-label">会话</div>
+        <div id="sessionList" class="session-list"></div>
+      </div>
+      <div class="rail-footer">
+        <label class="settings-label" for="outputDir">OUTPUT_DIR</label>
+        <div class="settings-row">
+          <input id="outputDir" type="text" spellcheck="false" />
+          <button id="btnSaveSettings" type="button" class="ghost">应用</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="top-title">
+          <span id="sessionTitle">当前会话</span>
+          <div class="subagent-wrap" id="subagentWrap" hidden>
+            <button type="button" class="subagent-btn" id="subagentBtn" aria-expanded="false" aria-haspopup="listbox">
+              <span id="subagentHint">0 个子代理</span>
+              <span class="subagent-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="subagent-menu" id="subagentMenu" hidden role="listbox"></div>
+          </div>
+        </div>
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="chat" role="tab">对话</button>
+          <button type="button" class="tab" data-tab="traj" role="tab">轨迹</button>
+        </div>
+        <div class="top-actions">
+          <button type="button" class="ghost" id="btnRefreshTree">刷新</button>
+          <a class="ghost linkish" id="btnDownloadLog" href="/api/session/download">Session log</a>
+        </div>
+      </header>
+
+      <section id="paneChat" class="pane-chat active">
+        <div id="chatLog" class="chat-log" aria-live="polite"></div>
+        <form id="chatForm" class="composer">
+          <textarea id="chatInput" rows="2" placeholder="给智能体发消息（Enter 发送，Shift+Enter 换行）"></textarea>
+          <div class="composer-bar">
+            <span class="muted" id="statusLine">就绪</span>
+            <button id="btnSend" type="submit">发送</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="paneTraj" class="pane-traj">
+        <div class="traj-metrics" id="trajMetrics">
+          <div class="metric"><span class="m-label">Turns</span><span id="mTurns">0</span></div>
+          <div class="metric"><span class="m-label">Calls</span><span id="mTools">0</span></div>
+          <div class="metric"><span class="m-label">Events</span><span id="mEvents">0</span></div>
+          <div class="metric metric-click" id="metricSubs" title="查看子代理">
+            <span class="m-label">Subagents</span><span id="mSubs">0</span>
+          </div>
+        </div>
+        <div class="traj-timeline" id="trajTimeline" aria-hidden="true">
+          <div class="tl-row"><span class="tl-label">Input</span><div class="tl-bar" id="tlInput"></div></div>
+          <div class="tl-row"><span class="tl-label">Message</span><div class="tl-bar" id="tlMessage"></div></div>
+          <div class="tl-row"><span class="tl-label">Tool</span><div class="tl-bar" id="tlTools"></div></div>
+        </div>
+        <div id="trajLog" class="traj-log"></div>
+      </section>
+    </main>
+
+    <aside class="preview-drawer" id="previewDrawer">
+      <div class="preview-head">
+        <span id="previewTitle">预览</span>
+        <button type="button" class="ghost" id="btnClosePreview" hidden>关闭</button>
+      </div>
+      <pre id="preview" class="preview"><code id="previewCode" class="preview-empty">点击左侧工作区文件以预览</code></pre>
+    </aside>
+  </div>
+  <script src="/static/app.js?v=session-compress"></script>
+</body>
+</html>
