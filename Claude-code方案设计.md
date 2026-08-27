@@ -64,7 +64,7 @@ claude-code-mini/
 | L2 | 长期：语义 / 情节 / 程序 | `MEMORY.md` | `load_memory("long")` |
 | L3 | 用户画像与偏好 | `MEMORY.md` | **默认注入** |
 
-**启动时 MEMORY Consolidation（`harness/memory.py`）**
+**启动时 MEMORY Consolidation（`harness/memory/`）**
 
 1. `MEMORY.md` **不存在** → 按模板新建（空画像/长期占位）。  
 2. 扫描尚未 Consolidation、且含真实对话的 `session_*.json`（兼容旧 `.md`）；**没有** → 跳过，不调模型、不改 `MEMORY.md`。  
@@ -194,7 +194,7 @@ claude-code-mini/
 │   └── middleware/         # permission / prompt / compaction / recovery / lifecycle
 ├── harness/                # 核心逻辑（供 middleware / tools 调用，无主循环）
 │   ├── config.py           # ROOT / OUTPUT_DIR / MEMORY_DIR
-│   ├── memory.py           # 分层记忆 + 启动 Consolidation
+│   ├── memory/             # 分层记忆 + 会话 jsonl + Consolidation
 │   ├── permission.py
 │   ├── compaction.py
 │   ├── skills.py

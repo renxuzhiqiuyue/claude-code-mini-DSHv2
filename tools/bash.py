@@ -5,7 +5,7 @@ from __future__ import annotations
 from langchain_core.tools import tool
 
 from harness import config as cfg
-from harness.sandbox_exec import SANDBOX_CWD, last_bwrap_mount, prepare_sandbox_workdir, run_bash, sandbox_backend, sandbox_status_line
+from harness.sandbox import SANDBOX_CWD, last_bwrap_mount, prepare_sandbox_workdir, run_bash, sandbox_status_line
 
 
 def _normalize_command(command: str) -> str:

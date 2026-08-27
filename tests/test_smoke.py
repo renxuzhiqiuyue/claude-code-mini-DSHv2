@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import shutil
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
@@ -67,20 +68,26 @@ def test_compact_over_limit_keeps_humans_and_recent_ai():
 
 def test_session_json_sync(tmp_path: Path | None = None):
     from harness import memory as mem
+    from harness.memory import paths, runtime
 
     tmp = Path("/tmp/mini_cc_session_test")
     tmp.mkdir(exist_ok=True)
-    for p in tmp.glob("session_*.json"):
-        p.unlink()
+    for p in tmp.glob("session_*"):
+        if p.is_dir():
+            shutil.rmtree(p)
+        elif p.is_file():
+            p.unlink()
 
-    old_dir, old_file, old_state = mem.MEMORY_DIR, mem.MEMORY_FILE, mem.STATE_FILE
-    mem.MEMORY_DIR = tmp
-    mem.MEMORY_FILE = tmp / "MEMORY.md"
-    mem.STATE_FILE = tmp / ".consolidate_state.json"
-    mem._current_session = None
+    old_dir, old_file, old_state = paths.MEMORY_DIR, paths.MEMORY_FILE, paths.STATE_FILE
+    paths.MEMORY_DIR = tmp
+    paths.MEMORY_FILE = tmp / "MEMORY.md"
+    paths.STATE_FILE = tmp / ".consolidate_state.json"
+    runtime.current_session = None
+    runtime.current_session_dir = None
 
     mem.start_session("test")
-    assert mem._current_session.suffix == ".json"
+    assert runtime.current_session is not None
+    assert runtime.current_session.suffix == ".jsonl"
 
     mem.sync_session_messages(
         [
@@ -90,8 +97,8 @@ def test_session_json_sync(tmp_path: Path | None = None):
         ],
         reason="test",
     )
-    doc = mem._load_session_doc(mem._current_session)
-    keys = [next(iter(x)) for x in doc["messages"]]
+    view = mem.load_session_view(runtime.current_session.parent)
+    keys = [next(iter(x)) for x in view["messages"]]
     assert keys == ["HumanMessage", "AIMessage", "ToolMessage"]
 
     # 幂等：再同步不加重复
@@ -99,10 +106,11 @@ def test_session_json_sync(tmp_path: Path | None = None):
         [HumanMessage(content="你好"), AIMessage(content="你好！")],
         reason="test2",
     )
-    assert len(mem._load_session_doc(mem._current_session)["messages"]) == 3
+    assert len(mem.load_session_view(runtime.current_session.parent)["messages"]) == 3
 
-    mem.MEMORY_DIR, mem.MEMORY_FILE, mem.STATE_FILE = old_dir, old_file, old_state
-    mem._current_session = None
+    paths.MEMORY_DIR, paths.MEMORY_FILE, paths.STATE_FILE = old_dir, old_file, old_state
+    runtime.current_session = None
+    runtime.current_session_dir = None
 
 
 if __name__ == "__main__":

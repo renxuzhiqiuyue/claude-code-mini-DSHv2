@@ -80,7 +80,7 @@ def set_output_dir(raw: str | Path | None = None) -> Path:
 
 set_output_dir(os.environ.get("OUTPUT_DIR") or ".output")
 
-# —— 命令沙箱（bash/python；见 harness/sandbox_exec.py）——
+# —— 命令沙箱（bash/python；见 harness/sandbox/）——
 # auto（默认）| bwrap | landlock | off
 # auto：优先 bwrap（映射 /workspace），否则 landlock-run（harness/bin/）
 SANDBOX_BACKEND = (os.environ.get("SANDBOX_BACKEND") or "auto").strip().lower() or "auto"
@@ -95,7 +95,7 @@ def ensure_runtime_dirs() -> None:
     SKILLS_DIR.mkdir(parents=True, exist_ok=True)
     TOOL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     from harness.memory import ensure_memory_files
-    from harness.sandbox_exec import ensure_workspace_link, sandbox_status_line
+    from harness.sandbox import ensure_workspace_link, sandbox_status_line
 
     ensure_memory_files()
     ensure_workspace_link(OUTPUT_DIR)

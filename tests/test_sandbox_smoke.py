@@ -1,4 +1,4 @@
-"""sandbox_exec 烟雾测试：可写工作区、拒写 /etc。"""
+"""sandbox 烟雾测试：可写工作区、拒写 /etc。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from harness import config as cfg  # noqa: E402
-from harness.sandbox_exec import (  # noqa: E402
+from harness.sandbox import (  # noqa: E402
     resolve_backend,
     run_bash,
     sandbox_status_line,

@@ -58,10 +58,9 @@ python -m serve.web_server  # http://127.0.0.1:8765 ，浏览器内选会话
 ```
 claude-code-mini/
 ├── agents/          # build_planner、llm（Planner/Solver）、middleware
-├── harness/         # config / memory / permission / compaction / skills / todo
+├── harness/         # config / memory / permission / compaction / skills / todo / sandbox
 ├── tools/           # PLANNER_TOOLS / SOLVER_TOOLS；solve_task.py
 ├── serve/           # CLI + Web（对话 / 轨迹 JSONL）
-├── monitor-agent/   # .memory 会话浏览器（:40000）
 ├── skills/          # planner/ · solver/ · shared/
 ├── .memory/         # MEMORY.md + session_*/session.jsonl + solver/
 └── …
