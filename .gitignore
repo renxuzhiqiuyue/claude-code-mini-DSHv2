@@ -5,7 +5,9 @@ __pycache__/
 *.so
 *.egg-info/
 .eggs/
+# 离线 conda 包、构建产物（不入库）
 dist/
+dist/**
 build/
 .pytest_cache/
 .mypy_cache/
