@@ -200,7 +200,7 @@ claude-code-mini/
 │   ├── skills.py
 │   └── todo.py
 ├── tools/                  # PLANNER/SOLVER 工具集；solve_task / text2sql / root_cause / tavily
-├── db/                     # connection + MySQL manager
+├── db/                     # connection + SQLite manager；数据在 db/data/deepReport.sqlite
 ├── serve/                  # 启动方式
 │   ├── main.py             # CLI
 │   ├── web_server.py       # Web（Phase C）
@@ -211,7 +211,7 @@ claude-code-mini/
 └── .output/                # 默认 OUTPUT_DIR
 ```
 
-配置：`MODEL_ID` + `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL`；**`OUTPUT_DIR`**；**`DB_*`**；可选 **`TAVILY_API_KEY`**。  
+配置：`MODEL_ID` + `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL`；**`OUTPUT_DIR`**；**`DB_SQLITE_PATH`**。  
 栈：Python 3.10+、**LangChain / LangGraph**、`python-dotenv`、FastAPI / uvicorn（SSE）。
 
 ---

@@ -37,6 +37,10 @@ env/
 .output/
 **/.output/
 
+# 本地 SQLite 业务库（体积大，不入库）
+db/data/*
+!db/data/.gitkeep
+
 # .memory：忽略全部，仅保留 README.md
 .memory/*
 !.memory/README.md

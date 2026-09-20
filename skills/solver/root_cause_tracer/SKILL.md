@@ -100,7 +100,7 @@ python ../skills/solver/root_cause_tracer/scripts/drill_engine.py drill \
 
 | 场景 | 使用 |
 |------|------|
-| MySQL 在线根因 | read-root-cause |
+| SQLite 根因取数 | read-root-cause |
 | 算法 / CLI / 出图 | 本 Skill |
 | 报告第五章 | yijiu-huanxin-reporter |
 

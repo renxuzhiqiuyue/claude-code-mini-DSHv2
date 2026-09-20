@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from langchain_core.tools import tool
 
-from db.manager import get_mysql_manager
+from db.manager import get_db_manager
 from tools import root_cause_utils as rc
 from tools.text2sql import is_sql_check_failed
 
@@ -17,7 +17,7 @@ def _split_list(value: str) -> list[str]:
 
 
 def _fetch_rows_from_sql(sql: str) -> tuple[list[str], list[dict]] | str:
-    mgr = get_mysql_manager()
+    mgr = get_db_manager()
     check_result = mgr.validate_query(sql)
     if is_sql_check_failed(check_result):
         return json.dumps(
@@ -35,7 +35,7 @@ def _fetch_rows_from_sql(sql: str) -> tuple[list[str], list[dict]] | str:
         )
     if not raw_rows:
         return json.dumps(
-            {"valid": False, "errors": ["MySQL 查询结果为空"]},
+            {"valid": False, "errors": ["SQLite 查询结果为空"]},
             ensure_ascii=False,
             indent=2,
         )
@@ -51,7 +51,7 @@ def fetch_period_data(
     current_label: str = "当期",
     base_label: str = "基期",
 ) -> str:
-    """从 MySQL 取当期/基期长表（一个指标 + 多维度），校验后返回 data 或 cache_id。"""
+    """从 SQLite 取当期/基期长表（一个指标 + 多维度），校验后返回 data 或 cache_id。"""
     print(f"\033[33m→ fetch_period_data(metric={metric!r})\033[0m")
     try:
         dimension_list = _split_list(dimensions)
@@ -72,7 +72,7 @@ def fetch_period_data(
         payload: dict[str, Any] = {
             "valid": validation["valid"],
             "errors": validation.get("errors", []),
-            "source": "mysql",
+            "source": "sqlite",
             "row_count": validation["row_count"],
             "columns": validation["columns"],
             "period_values": validation.get("period_values", []),
@@ -87,7 +87,7 @@ def fetch_period_data(
             cache_id = rc.save_dataset(payload)
             summary = {
                 "valid": True,
-                "source": "mysql",
+                "source": "sqlite",
                 "row_count": len(rows),
                 "columns": columns,
                 "period_values": validation.get("period_values", []),

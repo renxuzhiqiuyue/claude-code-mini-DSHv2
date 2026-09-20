@@ -1,66 +1,59 @@
-"""数据库连接系统。
-
-Skill（如 read_sql_data）与后续 SQL 工具从此处取连接。
-凭证优先读环境变量 / `.env`：DB_HOST、DB_PORT、DB_USER、DB_PASSWORD、DB_NAME。
-"""
+"""数据库连接：只读 SQLite（db/data/deepReport.sqlite）。"""
 
 from __future__ import annotations
 
 import os
+import sqlite3
+from pathlib import Path
 from typing import Any
-
-# 可选依赖：未安装时给出明确提示，不阻断其它模块导入
-try:
-    import pymysql
-except ImportError:  # pragma: no cover
-    pymysql = None  # type: ignore
 
 try:
     from sqlalchemy import create_engine
     from sqlalchemy.engine import Engine
+    from sqlalchemy.pool import StaticPool
 except ImportError:  # pragma: no cover
     create_engine = None  # type: ignore
     Engine = Any  # type: ignore
+    StaticPool = None  # type: ignore
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_SQLITE = ROOT / "db" / "data" / "deepReport.sqlite"
 
 
-def _db_settings() -> dict[str, Any]:
-    return {
-        "host": os.environ.get("DB_HOST", "127.0.0.1"),
-        "port": int(os.environ.get("DB_PORT", "3306")),
-        "user": os.environ.get("DB_USER", "root"),
-        "password": os.environ.get("DB_PASSWORD", ""),
-        "database": os.environ.get("DB_NAME", ""),
-        "charset": os.environ.get("DB_CHARSET", "utf8mb4"),
-    }
+def sqlite_path() -> Path:
+    raw = (os.environ.get("DB_SQLITE_PATH") or "").strip()
+    p = Path(raw).expanduser() if raw else DEFAULT_SQLITE
+    if not p.is_absolute():
+        p = ROOT / p
+    return p.resolve()
 
 
-def get_connection():
-    """返回 pymysql 连接（调用方负责 close）。"""
-    if pymysql is None:
-        raise RuntimeError("未安装 pymysql，请 pip install pymysql")
-    cfg = _db_settings()
-    if not cfg["database"]:
-        raise RuntimeError("请设置环境变量 DB_NAME")
-    return pymysql.connect(
-        host=cfg["host"],
-        port=cfg["port"],
-        user=cfg["user"],
-        password=cfg["password"],
-        database=cfg["database"],
-        charset=cfg["charset"],
-        cursorclass=pymysql.cursors.DictCursor,
-    )
+def _assert_sqlite_file(path: Path) -> Path:
+    if not path.is_file():
+        raise RuntimeError(f"SQLite 文件不存在: {path}")
+    return path
+
+
+def sqlite_url(path: Path | None = None) -> str:
+    """SQLAlchemy 只读 URI。"""
+    db = _assert_sqlite_file(path or sqlite_path())
+    return f"sqlite+pysqlite:///file:{db.as_posix()}?mode=ro&uri=true"
+
+
+def get_connection() -> sqlite3.Connection:
+    """返回 sqlite3 只读连接（调用方负责 close）。"""
+    db = _assert_sqlite_file(sqlite_path())
+    conn = sqlite3.connect(f"file:{db.as_posix()}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 def get_engine() -> Engine:
-    """返回 SQLAlchemy Engine（可选）。"""
-    if create_engine is None:
+    """返回 SQLAlchemy Engine（只读）。"""
+    if create_engine is None or StaticPool is None:
         raise RuntimeError("未安装 sqlalchemy，请 pip install sqlalchemy")
-    cfg = _db_settings()
-    if not cfg["database"]:
-        raise RuntimeError("请设置环境变量 DB_NAME")
-    url = (
-        f"mysql+pymysql://{cfg['user']}:{cfg['password']}"
-        f"@{cfg['host']}:{cfg['port']}/{cfg['database']}?charset={cfg['charset']}"
+    return create_engine(
+        sqlite_url(),
+        connect_args={"check_same_thread": False, "uri": True},
+        poolclass=StaticPool,
     )
-    return create_engine(url, pool_pre_ping=True)

@@ -52,7 +52,7 @@ def load_dataset(cache_id: str) -> dict[str, Any]:
 
 
 def normalize_rows(rows: list[dict]) -> list[dict[str, str]]:
-    """Convert MySQL query rows to string-keyed dicts for analysis."""
+    """Convert SQLite query rows to string-keyed dicts for analysis."""
     return [{str(k): "" if v is None else str(v) for k, v in row.items()} for row in rows]
 
 

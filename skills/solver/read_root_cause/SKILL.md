@@ -7,7 +7,7 @@ description: 当需要对指标异动做根因下钻（当期 vs 基期）时使
 
 ## 概述
 
-本 Skill 说明 **root_cause 工具**（`tools/root_cause.py`） 的两个工具：`fetch_period_data`、`build_root_cause_tree`。从 MySQL 长表取数、校验、两层下钻归因，并产出 JSON / Markdown / 决策树结构。表名字段见 read-sql-data；算法见 root-cause-tracer；报告写法见 yijiu-huanxin-reporter。
+本 Skill 说明 **root_cause 工具**（`tools/root_cause.py`） 的两个工具：`fetch_period_data`、`build_root_cause_tree`。从 SQLite 长表取数、校验、两层下钻归因，并产出 JSON / Markdown / 决策树结构。表名字段见 read-sql-data；算法见 root-cause-tracer；报告写法见 yijiu-huanxin-reporter。
 
 ## 工作区与路径约定
 
@@ -174,7 +174,7 @@ GROUP BY t.prod_tp, t.rec_city_nm, t.eng_grade
 ```json
 {
   "valid": true,
-  "source": "mysql",
+  "source": "sqlite",
   "row_count": 120,
   "columns": ["period", "prod_tp", "rec_city_nm", "eng_grade", "trans_amt"],
   "period_values": ["基期", "当期"],

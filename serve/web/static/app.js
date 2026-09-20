@@ -29,7 +29,7 @@
   const compressDesc = $("compressDesc");
 
   const AVATAR_USER = "/static/avatars/user.svg";
-  const AVATAR_AGENT = "/static/avatars/agent-lulu.svg?v=2";
+  const AVATAR_AGENT = "/static/avatars/agent-lulu.svg?v=4";
 
   let threadId = "";
   let currentSessionName = "";
@@ -909,10 +909,12 @@
 
   /**
    * 串行三车道：Input / Message / Tool，同一时刻只占一格；
-   * actualMs = 真实时长；weight = 仅用于绘制的等效宽度（最短 1s，不改实际值）。
+   * actualMs = 真实时长（tooltip / 文案）；weight = 仅用于绘制的等效宽度
+   * （最短 1s、最长 20s，不改实际值）。
    */
   function buildTimelineSpans(events) {
     const TL_MIN_DISPLAY_MS = 1000;
+    const TL_MAX_DISPLAY_MS = 20000;
     const list = (events || []).filter((ev) => {
       const t = ev.type;
       // timeline 不展示 context / session meta
@@ -988,21 +990,19 @@
       const nextMs = next ? parseEventTs(next.ts) : null;
 
       if (lane === "input") {
-        // Input = 实际间隔时长，上限 10s；同秒塌缩时用估算
-        const INPUT_MAX_MS = 10000;
+        // Input 真实间隔原样保留；条宽由后面 weight 上限 20s 约束
         let actual = 0;
         if (startMs != null && nextMs != null && nextMs > startMs) {
           actual = nextMs - startMs;
         }
-        const inputMs = actual > 0
-          ? Math.min(actual, INPUT_MAX_MS)
-          : Math.min(INPUT_MAX_MS, Math.max(400, Math.min(3000, 200 + textLen * 8)));
+        const fallback = Math.max(400, Math.min(3000, 200 + textLen * 8));
+        const realMs = actual > 0 ? actual : fallback;
         spans.push({
           lane: "input",
           label,
           startMs,
-          endMs: startMs != null ? startMs + inputMs : null,
-          weightHint: inputMs,
+          endMs: startMs != null ? startMs + realMs : null,
+          weightHint: actual > 0 ? null : fallback,
           textLen,
           seq: spans.length,
         });
@@ -1057,7 +1057,7 @@
       for (const s of list) {
         const actual = spanActualMs(s);
         s.actualMs = actual;
-        s.weight = Math.max(TL_MIN_DISPLAY_MS, actual);
+        s.weight = Math.min(TL_MAX_DISPLAY_MS, Math.max(TL_MIN_DISPLAY_MS, actual));
         s.offset = cursor;
         cursor += s.weight;
       }
@@ -1088,7 +1088,7 @@
       }
       for (const s of spans) {
         if (s.lane === "input") {
-          s.weightHint = Math.min(10000, Math.max(400, s.textLen ? 200 + s.textLen * 8 : 800));
+          s.weightHint = Math.min(TL_MAX_DISPLAY_MS, Math.max(400, s.textLen ? 200 + s.textLen * 8 : 800));
         } else if (s.lane === "tool") {
           s.weightHint = Math.max(300, Math.min(30000, 300 + (s.textLen || 0) * 2));
         } else {
@@ -1101,7 +1101,7 @@
         const others = spans.filter((s) => s.lane !== "input");
         const inputSum = inputSpans.reduce((a, s) => a + spanActualMs(s), 0);
         const otherSum = others.reduce((a, s) => a + spanActualMs(s), 0) || 1;
-        const remain = Math.max(wall - Math.min(inputSum, 10000), others.length * 50);
+        const remain = Math.max(wall - Math.min(inputSum, TL_MAX_DISPLAY_MS), others.length * 50);
         for (const s of others) {
           s.weightHint = Math.max(50, Math.round((spanActualMs(s) / otherSum) * remain));
         }

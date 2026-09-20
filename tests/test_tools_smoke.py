@@ -96,7 +96,7 @@ def main() -> int:
         )
         from db import manager as dbm
 
-        dbm.get_mysql_manager.cache_clear()
+        dbm.get_db_manager.cache_clear()
 
         out = _invoke(sql_db_list_tables, {})
         if "失败" in out:
@@ -150,22 +150,14 @@ def main() -> int:
         failed += 1
         _fail("root_cause", str(e))
 
-    # —— tavily ——
+    # —— tavily（无网络桩）——
     try:
-        from tools.tavily_search import tavily_search
+        from tools.tavily_search import OFFLINE_REPLY, tavily_search
 
-        key = (os.getenv("TAVILY_API_KEY") or "").strip()
-        if not key:
-            out = _invoke(tavily_search, {"query": "test", "max_results": 1})
-            if "未设置 TAVILY_API_KEY" in out or "未安装 tavily" in out:
-                _ok("tavily_search（已注册；缺依赖或未配置 KEY，调用返回明确错误）")
-            else:
-                raise RuntimeError(f"预期配置错误提示，实际: {out[:120]}")
-        else:
-            out = _invoke(tavily_search, {"query": "以旧换新", "max_results": 1})
-            if "失败" in out[:20]:
-                raise RuntimeError(out[:200])
-            _ok("tavily_search")
+        out = _invoke(tavily_search, {"query": "test", "max_results": 1})
+        if out != OFFLINE_REPLY:
+            raise RuntimeError(f"预期离线提示，实际: {out[:120]}")
+        _ok("tavily_search（无网络，返回离线提示）")
     except Exception as e:
         failed += 1
         _fail("tavily_search", str(e))

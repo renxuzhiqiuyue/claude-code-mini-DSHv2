@@ -476,8 +476,8 @@ button.ghost:hover, a.ghost:hover { border-color: var(--accent); color: var(--ac
   background: #f3f4f6;
 }
 
-.chat-row.user .chat-avatar {
-  color: #4b5563;
+.chat-row.assistant .chat-avatar {
+  object-position: center 22%;
 }
 
 .bubble {

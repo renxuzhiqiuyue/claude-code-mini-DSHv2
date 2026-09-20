@@ -1,70 +1,114 @@
-"""MySQL 管理器（Text2SQL / 根因取数）。"""
+"""SQLite 管理器（Text2SQL / 根因取数）。"""
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 from functools import lru_cache
 from typing import Any, List
-from urllib.parse import quote_plus
+
+from db.connection import sqlite_url
 
 logger = logging.getLogger(__name__)
 
+TABLE_COMMENTS = {
+    "iss_ins_dim": "发卡机构维度表",
+    "usr_dim": "用户维度表",
+    "mchnt_dim": "商户维度表",
+    "card_info": "卡号信息表",
+    "yjhx_trans_detail": "以旧换新交易明细表",
+}
 
-def _sa() -> tuple[Any, Any, Any]:
+COLUMN_COMMENTS = {
+    ("iss_ins_dim", "iss_ins_id_cd"): "发卡机构代码",
+    ("iss_ins_dim", "iss_ins_nm"): "发卡机构中文名称",
+    ("usr_dim", "usr_id"): "用户 ID",
+    ("usr_dim", "usr_city_nm"): "城市",
+    ("usr_dim", "branch_org_cd"): "分公司代码",
+    ("usr_dim", "branch_org_nm"): "分公司名称",
+    ("usr_dim", "age"): "年龄",
+    ("usr_dim", "sex"): "性别",
+    ("usr_dim", "trans_level"): "交易水平",
+    ("mchnt_dim", "mchnt_cd"): "商编",
+    ("mchnt_dim", "mchnt_nm"): "商户名称",
+    ("mchnt_dim", "mchnt_city_nm"): "所属城市",
+    ("mchnt_dim", "acq_ins_id_cd"): "收单机构代码",
+    ("mchnt_dim", "acq_ins_nm"): "收单机构名称",
+    ("card_info", "card_no"): "卡号",
+    ("card_info", "usr_id"): "用户 ID",
+    ("card_info", "iss_ins_id_cd"): "发卡机构代码",
+    ("card_info", "card_attr"): "卡性质",
+    ("card_info", "card_brand"): "卡品牌",
+    ("yjhx_trans_detail", "issuer_tp"): "发券方",
+    ("yjhx_trans_detail", "mchnt_cd"): "商编",
+    ("yjhx_trans_detail", "usr_id"): "用户 ID",
+    ("yjhx_trans_detail", "card_no"): "卡号",
+    ("yjhx_trans_detail", "iss_ins_id_cd"): "发卡机构代码",
+    ("yjhx_trans_detail", "prod_nm"): "商品名称",
+    ("yjhx_trans_detail", "prod_tp"): "商品大类",
+    ("yjhx_trans_detail", "eng_grade"): "能级分类",
+    ("yjhx_trans_detail", "brand_nm"): "品牌名称",
+    ("yjhx_trans_detail", "act_id"): "活动 ID",
+    ("yjhx_trans_detail", "act_nm"): "活动名称",
+    ("yjhx_trans_detail", "rec_city_nm"): "收货城市",
+    ("yjhx_trans_detail", "rec_dt"): "收货日期",
+    ("yjhx_trans_detail", "trans_amt"): "交易金额",
+    ("yjhx_trans_detail", "discount_amt"): "补贴金额",
+    ("yjhx_trans_detail", "income_amt"): "收入金额",
+    ("yjhx_trans_detail", "trans_dt"): "交易日期（月报主时间字段，YYYY-MM-DD）",
+    ("yjhx_trans_detail", "trans_tm"): "交易时间",
+    ("yjhx_trans_detail", "pay_tp"): "支付方式",
+    ("yjhx_trans_detail", "is_payment"): "是否分期",
+    ("yjhx_trans_detail", "is_online"): "是否线上",
+}
+
+
+def _sa() -> tuple[Any, Any, Any, Any]:
     """惰性导入 sqlalchemy，避免进程早于依赖安装时把失败结果钉死。"""
     try:
         from sqlalchemy import create_engine, inspect, text
+        from sqlalchemy.pool import StaticPool
     except ImportError as e:
         raise RuntimeError(
-            "未安装 sqlalchemy / pymysql，请在工程 venv 中执行: "
-            "pip install sqlalchemy pymysql"
+            "未安装 sqlalchemy，请在工程 venv 中执行: pip install sqlalchemy"
         ) from e
-    return create_engine, inspect, text
+    return create_engine, inspect, text, StaticPool
 
 
-class MySQLDatabaseManager:
-    def __init__(self, connection_string: str, pool_size: int = 5, pool_recycle: int = 3600):
-        create_engine, _, _ = _sa()
+class DatabaseManager:
+    def __init__(self, connection_string: str | None = None):
+        create_engine, _, _, StaticPool = _sa()
+        url = connection_string or sqlite_url()
         self.engine = create_engine(
-            connection_string,
-            pool_size=pool_size,
-            pool_recycle=pool_recycle,
-            pool_pre_ping=True,
+            url,
+            connect_args={"check_same_thread": False, "uri": True},
+            poolclass=StaticPool,
         )
 
     def get_table_names(self) -> list[str]:
-        _, inspect, _ = _sa()
+        _, inspect, _, _ = _sa()
         try:
-            return inspect(self.engine).get_table_names()
+            names = inspect(self.engine).get_table_names()
+            return [n for n in names if not n.startswith("sqlite_")]
         except Exception as e:
             logger.exception("获取表名失败: %s", e)
             raise ValueError(f"获取数据库中的表名失败: {e}") from e
 
     def get_tables_with_comments(self) -> List[dict]:
-        _, _, text = _sa()
         try:
-            query = text(
-                """
-                SELECT TABLE_NAME, TABLE_COMMENT
-                FROM INFORMATION_SCHEMA.TABLES
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
-                ORDER BY TABLE_NAME
-                """
-            )
-            with self.engine.connect() as conn:
-                result = conn.execute(query)
-                return [
-                    {"table_name": row[0], "table_comment": row[1]}
-                    for row in result.fetchall()
-                ]
+            return [
+                {
+                    "table_name": name,
+                    "table_comment": TABLE_COMMENTS.get(name, ""),
+                }
+                for name in self.get_table_names()
+            ]
         except Exception as e:
             logger.exception("获取表注释失败: %s", e)
             raise ValueError(f"获取数据库中的表名和注释失败: {e}") from e
 
     def get_table_schema(self, table_names: list[str] | None = None) -> list[dict]:
-        _, inspect, _ = _sa()
+        _, inspect, _, _ = _sa()
         try:
             inspector = inspect(self.engine)
             schema_info = []
@@ -79,7 +123,11 @@ class MySQLDatabaseManager:
                 table_schema = f"表名: {table_name}\n列信息：\n"
                 for column in columns:
                     pk_indicator = "（主键）" if column["name"] in primary_keys else ""
-                    comment = column.get("comment", "无注释")
+                    comment = (
+                        COLUMN_COMMENTS.get((table_name, column["name"]))
+                        or column.get("comment")
+                        or "无注释"
+                    )
                     table_schema += (
                         f"  - {column['name']}: {column['type']}{pk_indicator} "
                         f"[注释：{comment}]\n"
@@ -112,7 +160,7 @@ class MySQLDatabaseManager:
     def fetch_query_rows(
         self, query: str, max_rows: int = 100_000
     ) -> tuple[list[str], list[dict]]:
-        _, _, text = _sa()
+        _, _, text, _ = _sa()
         self._assert_readonly_query(query)
         try:
             with self.engine.connect() as conn:
@@ -141,7 +189,7 @@ class MySQLDatabaseManager:
             raise ValueError(f"执行SQL取数失败: {e}") from e
 
     def execute_query(self, query: str) -> str:
-        _, _, text = _sa()
+        _, _, text, _ = _sa()
         self._assert_readonly_query(query)
         try:
             with self.engine.connect() as conn:
@@ -171,7 +219,7 @@ class MySQLDatabaseManager:
             raise ValueError(f"执行SQL语句失败: {e}") from e
 
     def validate_query(self, query: str) -> str:
-        _, _, text = _sa()
+        _, _, text, _ = _sa()
         if not query or not query.strip():
             return "错误：查询语句不能为空"
         query_stripped = query.strip()
@@ -187,21 +235,13 @@ class MySQLDatabaseManager:
             return f"sql查询语句EXPLAIN解析失败: {e}, 请检查查询语句是否正确"
 
 
-def _mysql_url_from_env() -> str:
-    # 兼容 MYSQL_* 与 DB_*
-    user = os.getenv("DB_USER") or os.getenv("MYSQL_USER") or "root"
-    password = os.getenv("DB_PASSWORD") or os.getenv("MYSQL_PASSWORD") or ""
-    host = os.getenv("DB_HOST") or os.getenv("MYSQL_HOST") or "127.0.0.1"
-    port = os.getenv("DB_PORT") or os.getenv("MYSQL_PORT") or "3306"
-    database = os.getenv("DB_NAME") or os.getenv("MYSQL_DATABASE") or ""
-    if not database:
-        raise RuntimeError("未设置 DB_NAME / MYSQL_DATABASE")
-    return (
-        f"mysql+pymysql://{quote_plus(user)}:{quote_plus(password)}"
-        f"@{host}:{port}/{database}?charset=utf8mb4"
-    )
+# 兼容旧名
+MySQLDatabaseManager = DatabaseManager
 
 
 @lru_cache(maxsize=1)
-def get_mysql_manager() -> MySQLDatabaseManager:
-    return MySQLDatabaseManager(_mysql_url_from_env())
+def get_db_manager() -> DatabaseManager:
+    return DatabaseManager()
+
+
+get_mysql_manager = get_db_manager

@@ -36,8 +36,8 @@ def build_planner_system_prompt(*, message_count: int = 0) -> str:
 
 ## Solver 能力（仅经 `solve_task`）
 Solver 使用独立模型（`.env` 的 `Solver_MODEL_ID`），跑完即销毁；
-- bash / 读写文件 / `load_skill` / `tavily_search` / `rag_search`
-- MySQL：`sql_db_list_tables` / `sql_db_table_schema` / `sql_db_query_checker` / `sql_db_query`
+- bash / 读写文件 / `load_skill` / `tavily_search`
+- SQLite：`sql_db_list_tables` / `sql_db_table_schema` / `sql_db_query_checker` / `sql_db_query`
 - 根因：`fetch_period_data` / `build_root_cause_tree`
 - **没有**：`todo_write` / `solve_task` / `load_memory`
 
@@ -58,10 +58,7 @@ Solver 使用独立模型（`.env` 的 `Solver_MODEL_ID`），跑完即销毁；
 | `read_file` / `write_file` / `edit_file` | 读写改 OUTPUT_DIR 内文件 |
 | `load_skill` | 按需加载技能（仅 `skills/planner/` + `skills/shared/`） |
 | `load_memory` | 按需加载短期/长期记忆（默认已含种类+画像） |
-| `tavily_search` | 联网搜索 |
-| `rag_search` | 本地知识库检索（Hybrid RAG，需 8300 服务） |
-| `credit_card_monthly_bill` / `utility_monthly_bi·ll` / `user_assets` | 信用卡/水电煤账单、用户资产（远程 API） |
-| `exchange_rate` / `create_payment_order` | 汇率换算、创建支付订单（远程 API） |
+| `tavily_search` | 联网搜索（当前无网络，返回后请直接用大模型知识作答） |
 | `current_date` / `calculator` | 东八区当前日期、安全数学计算（本地） |
 
 ## 可用技能
@@ -116,12 +113,9 @@ def build_solver_system_prompt(task_block: str) -> str:
 | `bash` | 在 `/workspace` 沙箱中执行（含 python3） |
 | `read_file` / `write_file` / `edit_file` | 读写改 OUTPUT_DIR 内文件 |
 | `load_skill` | 按需加载技能（仅 `skills/solver/` + `skills/shared/`） |
-| `tavily_search` | 联网搜索 |
-| `rag_search` | 本地知识库检索（Hybrid RAG，需 8300 服务） |
-| `sql_db_list_tables` / `sql_db_table_schema` / `sql_db_query_checker` / `sql_db_query` | MySQL 查询 |
+| `tavily_search` | 联网搜索（当前无网络，返回后请直接用大模型知识作答） |
+| `sql_db_list_tables` / `sql_db_table_schema` / `sql_db_query_checker` / `sql_db_query` | SQLite 查询 |
 | `fetch_period_data` / `build_root_cause_tree` | 根因分析 |
-| `credit_card_monthly_bill` / `utility_monthly_bill` / `user_assets` | 信用卡/水电煤账单、用户资产（远程 API） |
-| `exchange_rate` / `create_payment_order` | 汇率换算、创建支付订单（远程 API） |
 | `current_date` / `calculator` | 东八区当前日期、安全数学计算（本地） |
 
 ## 可用技能

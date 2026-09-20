@@ -39,7 +39,7 @@ python -m serve.web_server  # http://127.0.0.1:8765 ，浏览器内选会话
 | `Solver_API_KEY` / `Solver_BASE_URL` / `Solver_MODEL_ID` | **Solver**（可选，缺省回退 Planner_*） |
 | `OUTPUT_DIR` | 工具输出目录，默认 `.output` |
 | `SANDBOX_BACKEND` | `auto`（默认）/ `bwrap` / `landlock` / `off`；二进制见 `harness/bin/` |
-| `DB_*` / `TAVILY_API_KEY` | SQL·根因 / 联网（Solver 侧常用） |
+| `DB_SQLITE_PATH` | 业务库 SQLite 路径，默认 `db/data/deepReport.sqlite` |
 
 ## Planner / Solver 工具
 
@@ -49,7 +49,7 @@ python -m serve.web_server  # http://127.0.0.1:8765 ，浏览器内选会话
 | todo_write | ✓ | ✗ |
 | solve_task | ✓（委派） | ✗ |
 | load_skill / tavily | ✓ | ✓ |
-| 比赛远程/本地工具 | ✓ | ✓ |
+| current_date / calculator | ✓ | ✓ |
 | load_memory | ✓ | ✗（Solver 不读写用户记忆） |
 | text2sql / root_cause | ✗ | ✓ |
 

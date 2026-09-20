@@ -1,12 +1,12 @@
 ---
 name: read-sql-data
-description: 以旧换新月报 MySQL 取数。提供 DDL（create_tables.sql）、字段取值（common_values.md）与 sql_db_query 调用规范。当查询条数为0，或者join后，查询条数为0后，可以加载这个技能包。
+description: 以旧换新月报 SQLite 取数。提供 DDL（create_tables.sql）、字段取值（common_values.md）与 sql_db_query 调用规范。当查询条数为0，或者join后，查询条数为0后，可以加载这个技能包。
 includes:
   - create_tables.sql
   - common_values.md
 ---
 
-# MySQL 取数 Skill
+# SQLite 取数 Skill
 
 ## 工作区与路径约定
 
