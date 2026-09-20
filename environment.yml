@@ -1,0 +1,9 @@
+# 由当前 .venv（Python 3.12.3）封装而来
+name: claude-code-mini
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r requirements.lock.txt
