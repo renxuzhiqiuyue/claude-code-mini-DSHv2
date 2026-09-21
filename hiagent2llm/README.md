@@ -34,6 +34,14 @@ MODEL_NAME = "hiagent"
 健康检查：`GET /health`  
 模型列表：`GET /v1/models`
 
+网关起来后，另开终端验证能否当 `llm_url` 用：
+
+```bash
+python hiagent2llm/test.py
+```
+
+会检查 `/health`、`/v1/models`，再用 OpenAI SDK 和 LangChain `ChatOpenAI(base_url=...)` 各打一轮对话。
+
 ## 3. 调用方式
 
 ### OpenAI SDK
@@ -142,3 +150,4 @@ tool_call id=call_xxx name=todo_write
 | `hiagent.py` | create / chat / delete |
 | `pool.py` | 固定槽位、锁、用完重置 |
 | `bash-hiagent2llm.sh` | 启动脚本 |
+| `test.py` | 启动后验证 OpenAI / LangChain llm_url |
