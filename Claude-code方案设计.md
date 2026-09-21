@@ -93,7 +93,7 @@ claude-code-mini/
 
 **上下文压缩（`harness/compaction.py`）**
 
-- 触发：消息总字符数 > **200_000**。  
+- 触发：消息总字符数 > **40_000**。  
 - 保留全部用户 `HumanMessage`；较早 AI 块（含其 ToolMessage）由大模型摘要；最近 **3** 段 AI（及紧随 ToolMessage）全量保留。  
 - 排列：**用户输入 → AI 历史摘要 → 最近 3 段 AI 全量**。
 

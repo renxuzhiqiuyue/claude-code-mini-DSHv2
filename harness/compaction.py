@@ -1,7 +1,7 @@
 """上下文压缩：总字符超限时裁剪。
 
 参数从 .env 读取（不经 harness.config）：
-- CONTEXT_CHAR_LIMIT（默认 200000）
+- CONTEXT_CHAR_LIMIT（默认 40000）
 - KEEP_RECENT_AI_MESSAGES（默认 3）
 
 规则：
@@ -32,7 +32,7 @@ def _env_int(name: str, default: int) -> int:
 
 
 def context_char_limit() -> int:
-    return _env_int("CONTEXT_CHAR_LIMIT", 200_000)
+    return _env_int("CONTEXT_CHAR_LIMIT", 40_000)
 
 
 def keep_recent_ai_messages() -> int:
